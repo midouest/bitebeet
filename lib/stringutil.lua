@@ -5,7 +5,7 @@ function StringUtil.insert(str, cursor, data)
 end
 
 function StringUtil.delete(str, cursor)
-    return str:sub(1, cursor - 1) .. str:sub(cursor)
+    return str:sub(1, cursor - 1) .. str:sub(cursor + 1)
 end
 
 return StringUtil
