@@ -7,7 +7,7 @@ StringUtil = include('lib/stringutil')
 engine.name = nil
 
 local redraw_metro = nil
-local cursor = 0
+local cursor = {2, 21}
 local buffer = {
     "((t<<1)^((t<<1)+(t>>7)&t>>12))|t>>(",
     "4-(1^7&(t>>19)))|t>>7"
@@ -48,8 +48,10 @@ function enc(n, d)
 end
 
 function keyboard.char(char)
-    buffer = StringUtil.insert(buffer, cursor, char)
-    cursor = cursor + 1
+    local row = cursor[1]
+    local col = cursor[2]
+    buffer[row] = StringUtil.insert(buffer[row], col, char)
+    cursor[2] = col + 1
 end
 
 function keyboard.code(code, value)
@@ -57,12 +59,23 @@ function keyboard.code(code, value)
         return
     end
 
-    if code == "BACKSPACE" and cursor > 0 then
-        buffer = StringUtil.delete(buffer, cursor)
-        cursor = cursor - 1
+    if code == "BACKSPACE" and cursor[2] > 0 then
+        local row = cursor[1]
+        local col = cursor[2]
+        buffer[row] = StringUtil.delete(buffer[row], col)
+        cursor[2] = col - 1
     elseif code == "ENTER" then
-        engine.expr(table.concat(buffer))
+        engine.expr(table.concat(buffer), 0)
+    elseif code == "UP" then
+    elseif code == "DOWN" then
+    elseif code == "LEFT" then
+    elseif code == "RIGHT" then
     end
+    --[[
+        ESC, TAB, CAPSLOCK, LEFTSHIFT, LEFTCTRL, LEFTMETA, LEFTALT,
+        RIGHTSHIFT, RIGHTCTRL, RIGHTALT, DELETE,
+        F1-10
+    ]]
 end
 
 function redraw()
