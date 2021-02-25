@@ -1,5 +1,4 @@
 local Installer = {
-    -- constants
     PLUGIN = {
         BASE_URL = "https://github.com/midouest/bytebeat/releases/download/",
         VERSION = "0.0.2",
@@ -57,7 +56,9 @@ end
 
 local function file_exists(path)
     local f = io.open(path)
-    if f == nil then return false end
+    if f == nil then
+        return false
+    end
     f:close()
     return true
 end
@@ -77,7 +78,9 @@ end
 
 local function check_manifest(manifest)
     for _, path in ipairs(manifest) do
-        if not file_exists(path) then return false, path end
+        if not file_exists(path) then
+            return false, path
+        end
     end
     return true, nil
 end
@@ -88,7 +91,10 @@ function Installer.init()
     state = installed and State.INSTALLED or State.NOT_INSTALLED
 end
 
-function Installer.is_installed() return state == State.INSTALLED end
+function Installer.is_installed()
+    return state == State.INSTALLED
+end
+
 function Installer.is_working()
     return state ~= State.NOT_INSTALLED and state ~= State.INSTALLED
 end
@@ -96,10 +102,14 @@ end
 function Installer.install(options)
     state = State.DOWNLOADING
     download_plugin(function()
-        if options.on_downloaded then options.on_downloaded() end
+        if options.on_downloaded then
+            options.on_downloaded()
+        end
         state = State.INSTALLING
         install_plugin()
-        if options.on_installed then options.on_installed() end
+        if options.on_installed then
+            options.on_installed()
+        end
         state = State.SHUTTING_DOWN
     end)
 end
