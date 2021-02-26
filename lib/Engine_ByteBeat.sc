@@ -18,33 +18,26 @@ Engine_ByteBeat : CroneEngine {
         SynthDef.new(\bytebeat, {
           arg out, amp=0.5, amplag=0.02;
           var amp_ = Lag.ar(K2A.ar(amp), amplag);
-          Out.ar(out, (ByteBeat.ar() * amp).dup)
+          var t = PulseCount.ar(Impulse.ar(8000));
+          Out.ar(out, (ByteBeat.ar(t) * amp).dup)
         }).add;
 
         context.server.sync;
 
         synth = Synth.new(\bytebeat);
-        // 1 is the index of UGen in the synth. This is required to send unit
-        // commands to the UGen while it is running.
-        controller = ByteBeatController(synth, 1);
+        // Second argument is the index of UGen in the synth. This is required
+        // to send unit commands to the UGen while it is running.
+        controller = ByteBeatController(synth, 3);
 
-        // First argument is a string containing the bytebeat expression to be
-        // evaluated. Second argument is integer indicating if the internal time
-        // counter should be reset after parsing the incoming expression. If 1,
-        // then reset the counter to 0, otherwise the new expression will start
-        // evaluating from the current time value.
-        this.addCommand(\expr, "si", { arg msg;
-          controller.setExpression(msg[1], msg[2]);
+        // Argument is a string containing the bytebeat expression to be
+        // evaluated.
+        this.addCommand(\expr, "s", { arg msg;
+          controller.eval(msg[1]);
         });
 
         // Set the amplitude amount of the synth output
         this.addCommand(\amp, "f", { arg msg;
           synth.set(\amp, msg[1]);
-        });
-
-        // Reset the UGen's internal time counter to 0
-        this.addCommand(\restart, "", { arg msg;
-            controller.restart();
         });
     }
 

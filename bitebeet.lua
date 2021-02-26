@@ -13,11 +13,15 @@ local buffer = {
     "4-(1^7&(t>>19)))|t>>7"
 }
 
+local COMMANDS = {
+    {"eval", "s"},
+    {"amp", "f"},
+}
+
 local function load_engine()
     engine.load("ByteBeat", function()
-        engine.register_commands(
-            {{"expr", "si"}, {"amp", "f"}, {"restart", ""}}, 3)
-        engine.expr(table.concat(buffer, ""), 0)
+        engine.register_commands(COMMANDS, #COMMANDS)
+        engine.eval(table.concat(buffer, ""), 0)
         engine.amp(0.1)
     end)
 end
@@ -65,7 +69,7 @@ function keyboard.code(code, value)
         buffer[row] = StringUtil.delete(buffer[row], col)
         cursor[2] = col - 1
     elseif code == "ENTER" then
-        engine.expr(table.concat(buffer), 0)
+        engine.eval(table.concat(buffer), 0)
     elseif code == "UP" then
     elseif code == "DOWN" then
     elseif code == "LEFT" then
