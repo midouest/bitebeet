@@ -1,17 +1,13 @@
 -- BITEBEET
 Installer = include('lib/install')
 InstallCtrl = include('lib/installctrl')
-StringUtil = include('lib/stringutil')
+Editor = include('lib/editor')
 
 -- Engine is loaded dynamically if UGen files are detected
 engine.name = nil
 
 local redraw_metro = nil
-local cursor = {2, 21}
-local buffer = {
-    "((t<<1)^((t<<1)+(t>>7)&t>>12))|t>>(",
-    "4-(1^7&(t>>19)))|t>>7"
-}
+local editor = nil
 
 local COMMANDS = {
     {"eval", "s"},
@@ -21,13 +17,20 @@ local COMMANDS = {
 local function load_engine()
     engine.load("ByteBeat", function()
         engine.register_commands(COMMANDS, #COMMANDS)
-        engine.eval(table.concat(buffer, ""), 0)
+        engine.eval(editor:get_buffer(), 0)
         engine.amp(0.1)
     end)
 end
 
 function init()
     Installer.init()
+
+    editor = Editor.new {
+        "((t<<1)^((t<<1)+",
+        "(t>>7)&t>>12))|t",
+        ">>(4-(1^7&(t>>19)",
+        "))|t>>7"
+    }
 
     if Installer.is_installed() then
         load_engine()
@@ -52,34 +55,11 @@ function enc(n, d)
 end
 
 function keyboard.char(char)
-    local row = cursor[1]
-    local col = cursor[2]
-    buffer[row] = StringUtil.insert(buffer[row], col, char)
-    cursor[2] = col + 1
+    editor:handle_char(char)
 end
 
 function keyboard.code(code, value)
-    if value == 0 then
-        return
-    end
-
-    if code == "BACKSPACE" and cursor[2] > 0 then
-        local row = cursor[1]
-        local col = cursor[2]
-        buffer[row] = StringUtil.delete(buffer[row], col)
-        cursor[2] = col - 1
-    elseif code == "ENTER" then
-        engine.eval(table.concat(buffer), 0)
-    elseif code == "UP" then
-    elseif code == "DOWN" then
-    elseif code == "LEFT" then
-    elseif code == "RIGHT" then
-    end
-    --[[
-        ESC, TAB, CAPSLOCK, LEFTSHIFT, LEFTCTRL, LEFTMETA, LEFTALT,
-        RIGHTSHIFT, RIGHTCTRL, RIGHTALT, DELETE,
-        F1-10
-    ]]
+    editor:handle_code(code, value)
 end
 
 function redraw()
@@ -88,12 +68,7 @@ function redraw()
     if not Installer.is_installed() then
         InstallCtrl.redraw()
     else
-        screen.font_face(1)
-        screen.font_size(8)
-        for i, line in ipairs(buffer) do
-            screen.move(0, i * 8)
-            screen.text(line)
-        end
+        editor:redraw()
     end
 
     screen.update()
