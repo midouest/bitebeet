@@ -29,21 +29,31 @@ local function cursor_to_index(c)
 end
 
 function Editor.new(buffer)
-    buffer = buffer or ''
-    local formatted = format_buffer(buffer)
-    local index = #buffer
-    local cursor = index_to_cursor(index)
-    return setmetatable(
+    local e =
+        setmetatable(
         {
-            _buffer = buffer,
-            _formatted = formatted,
-            _index = index,
-            _cursor = cursor,
+            _buffer = nil,
+            _formatted = nil,
+            _index = nil,
+            _cursor = nil,
             _blink = false,
             _frame = 0
         },
         Editor
     )
+    e:set_buffer(buffer)
+    return e
+end
+
+function Editor:set_buffer(buffer)
+    buffer = buffer or ''
+    local formatted = format_buffer(buffer)
+    local index = #buffer
+    local cursor = index_to_cursor(index)
+    self._buffer = buffer
+    self._formatted = formatted
+    self._index = index
+    self._cursor = cursor
 end
 
 function Editor:get_buffer()
@@ -69,6 +79,7 @@ function Editor:handle_code(code, value)
         self._cursor = index_to_cursor(self._index)
     elseif code == 'ENTER' then
         engine.eval(self._buffer, 0)
+        params:set('expression', self._buffer, true)
     elseif code == 'ESC' then
         engine.reset()
     elseif code == 'UP' then

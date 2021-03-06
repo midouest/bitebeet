@@ -75,7 +75,20 @@ end
 function init()
     Installer.init()
 
-    editor = Editor.new('t')
+    editor = Editor.new()
+
+    params:add_separator('bitebeet')
+
+    params:add {
+        type = 'text',
+        id = 'expression',
+        name = 'expression',
+        text = 't&t>>4',
+        action = function(val)
+            editor:set_buffer(val)
+        end
+    }
+    params:bang()
 
     if Installer.is_installed() then
         load_engine()
