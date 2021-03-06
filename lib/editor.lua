@@ -3,27 +3,58 @@ StringUtil = include('lib/stringutil')
 local Editor = {}
 Editor.__index = Editor
 
+local chars_per_line = 16
+local function format_buffer(buffer)
+    local num_lines = math.ceil(#buffer / chars_per_line)
+    local lines = {}
+    for i = 1, num_lines do
+        local s = ((i - 1) * chars_per_line) + 1
+        local e = s + chars_per_line
+        local line = buffer:sub(s, e)
+        table.insert(lines, line)
+    end
+    return lines
+end
+
+local function index_to_cursor(i)
+    local row = i // chars_per_line + 1
+    local col = (i % chars_per_line)
+    return {row, col}
+end
+
+local function cursor_to_index(c)
+    local row = c[1]
+    local col = c[2]
+    return ((row - 1) * chars_per_line) + col
+end
+
 function Editor.new(buffer)
-    buffer = buffer or {""}
-    rows = #buffer
-    cursor = {rows, #buffer[rows]}
-    return setmetatable({
-        _cursor = cursor,
-        _buffer = buffer,
-        _blink = false,
-        _frame = 0,
-    }, Editor)
+    buffer = buffer or ''
+    local formatted = format_buffer(buffer)
+    local index = #buffer
+    local cursor = index_to_cursor(index)
+    return setmetatable(
+        {
+            _buffer = buffer,
+            _formatted = formatted,
+            _index = index,
+            _cursor = cursor,
+            _blink = false,
+            _frame = 0
+        },
+        Editor
+    )
 end
 
 function Editor:get_buffer()
-    return table.concat(self._buffer, "")
+    return self._buffer
 end
 
 function Editor:handle_char(char)
-    local row = self._cursor[1]
-    local col = self._cursor[2]
-    self._buffer[row] = StringUtil.insert(self._buffer[row], col, char)
-    self._cursor[2] = col + 1
+    self._buffer = StringUtil.insert(self._buffer, self._index, char)
+    self._formatted = format_buffer(self._buffer)
+    self._index = self._index + 1
+    self._cursor = index_to_cursor(self._index)
 end
 
 function Editor:handle_code(code, value)
@@ -31,22 +62,29 @@ function Editor:handle_code(code, value)
         return
     end
 
-    if code == "BACKSPACE" and cursor[2] > 0 then
-        local row = self._cursor[1]
-        local col = self._cursor[2]
-        self._buffer[row] = StringUtil.delete(self._buffer[row], col)
-        self._cursor[2] = col - 1
-    elseif code == "ENTER" then
-        engine.eval(table.concat(self._buffer), 0)
-    elseif code == "UP" then
-        self._cursor[1] = self._cursor[1] - 1
-    elseif code == "DOWN" then
-        self._cursor[1] = self._cursor[1] + 1
-    elseif code == "LEFT" then
-        self._cursor[2] = self._cursor[2] - 1
-    elseif code == "RIGHT" then
-        self._cursor[2] = self._cursor[2] + 1
+    if code == 'BACKSPACE' and self._index > 0 then
+        self._buffer = StringUtil.delete(self._buffer, self._index)
+        self._formatted = format_buffer(self._buffer)
+        self._index = self._index - 1
+        self._cursor = index_to_cursor(self._index)
+    elseif code == 'ENTER' then
+        engine.eval(self._buffer, 0)
+    elseif code == 'ESC' then
+        engine.reset()
+    elseif code == 'UP' then
+        self._index = util.clamp(self._index - chars_per_line, 0, #self._buffer)
+        self._cursor = index_to_cursor(self._index)
+    elseif code == 'DOWN' then
+        self._index = util.clamp(self._index + chars_per_line, 0, #self._buffer)
+        self._cursor = index_to_cursor(self._index)
+    elseif code == 'LEFT' then
+        self._index = util.clamp(self._index - 1, 0, #self._buffer)
+        self._cursor = index_to_cursor(self._index)
+    elseif code == 'RIGHT' then
+        self._index = util.clamp(self._index + 1, 0, #self._buffer)
+        self._cursor = index_to_cursor(self._index)
     end
+
     --[[
         ESC, TAB, CAPSLOCK, LEFTSHIFT, LEFTCTRL, LEFTMETA, LEFTALT,
         RIGHTSHIFT, RIGHTCTRL, RIGHTALT, DELETE,
@@ -74,7 +112,7 @@ function Editor:redraw()
     screen.level(15)
     screen.font_face(67)
     screen.font_size(8)
-    for i, line in ipairs(self._buffer) do
+    for i, line in ipairs(self._formatted) do
         screen.move(0, i * 9)
         screen.text(line)
     end

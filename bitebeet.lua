@@ -6,40 +6,42 @@ Editor = include('lib/editor')
 -- Engine is loaded dynamically if UGen files are detected
 engine.name = nil
 
-local redraw_metro = nil
 local editor = nil
 
 local COMMANDS = {
-    {"eval", "s"},
-    {"amp", "f"},
+    {'eval', 'si'},
+    {'amp', 'f'},
+    {'reset', ''}
 }
 
 local function load_engine()
-    engine.load("ByteBeat", function()
-        engine.register_commands(COMMANDS, #COMMANDS)
-        engine.eval(editor:get_buffer(), 0)
-        engine.amp(0.1)
-    end)
+    engine.load(
+        'ByteBeat',
+        function()
+            engine.register_commands(COMMANDS, #COMMANDS)
+            engine.eval(editor:get_buffer(), 1)
+            engine.amp(0.1)
+        end
+    )
 end
 
 function init()
     Installer.init()
 
-    editor = Editor.new {
-        "((t<<1)^((t<<1)+",
-        "(t>>7)&t>>12))|t",
-        ">>(4-(1^7&(t>>19)",
-        "))|t>>7"
-    }
+    editor = Editor.new('t')
 
     if Installer.is_installed() then
         load_engine()
     end
 
-    redraw_metro = metro.init()
-    redraw_metro.time = 1 / 15.0
-    redraw_metro.event = function() redraw() end
-    redraw_metro:start()
+    clock.run(
+        function()
+            while true do
+                redraw()
+                clock.sleep(1 / 15.0)
+            end
+        end
+    )
 end
 
 function cleanup()
@@ -64,12 +66,10 @@ end
 
 function redraw()
     screen.clear()
-
     if not Installer.is_installed() then
         InstallCtrl.redraw()
     else
         editor:redraw()
     end
-
     screen.update()
 end
