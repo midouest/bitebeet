@@ -1,4 +1,51 @@
 -- BITEBEET
+-- low-rez live coding
+-- v0.0.1 @midouest
+--
+-- KEYBOARD REQUIRED
+--
+-- GUIDE
+-- This script is a bytebeat
+-- interpreter. Bytebeats are
+-- simple mathematical
+-- expressions used to generate
+-- glitchy, rhythmic melodies.
+--
+-- CONTROLS
+-- ENTER: evaluate expression
+-- ESC: reset t variable to 0
+-- BACKSPACE: delete previous
+-- ARROW KEYS: navigation
+--
+-- SYNTAX
+-- The interpreter supports a
+-- subset of the expression
+-- syntax for the C programming
+-- language.
+--
+-- one variable, t
+-- - increments after each
+--   sample at 8khz
+--
+-- constants
+-- - integers (+/-)
+-- - strings
+--
+-- math operators
+-- () + - * / %
+--
+-- bitwise operators
+-- & | ^ << >> ~
+--
+-- relational operators
+-- < > <= >= == != !
+--
+-- ternary if-else
+-- ?:
+--
+-- array subscript
+-- []
+
 Installer = include('lib/install')
 InstallCtrl = include('lib/installctrl')
 Editor = include('lib/editor')
