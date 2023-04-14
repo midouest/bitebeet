@@ -60,7 +60,13 @@ function Editor:get_buffer()
     return self._buffer
 end
 
+local max_lines = 7
+local max_chars = max_lines * chars_per_line
+
 function Editor:handle_char(char)
+    if #self._buffer >= max_chars then
+        return
+    end
     self._buffer = StringUtil.insert(self._buffer, self._index, char)
     self._formatted = format_buffer(self._buffer)
     self._index = self._index + 1
