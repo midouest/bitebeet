@@ -49,6 +49,10 @@ local function get_install_cmd()
     return 'cp -R ' .. staging_dir .. ' ' .. Installer.INSTALL_DIR
 end
 
+local function get_uninstall_cmd()
+    return 'rm -rf ' .. Installer.INSTALL_DIR .. '/' .. Installer.PLUGIN.NAME
+end
+
 local function install_plugin()
     os.execute(get_decompress_cmd())
     os.execute(get_install_cmd())
@@ -63,17 +67,17 @@ local function file_exists(path)
     return true
 end
 
-local function get_manifest()
-    local ext_base = Installer.INSTALL_DIR
+local function get_manifest(base_dir)
+    base_dir = base_dir or Installer.INSTALL_DIR
     local name = Installer.PLUGIN.NAME
-    local plugin_base = ext_base .. name .. '/' .. name .. '/'
+    local plugin_base = base_dir .. name .. '/' .. name .. '/'
     local class_base = plugin_base .. 'Classes/'
 
     local plug = plugin_base .. 'ByteBeat_scsynth.so'
     local ugen = class_base .. 'ByteBeat.sc'
     local ctrl = class_base .. 'ByteBeatController.sc'
 
-    return {plug, ugen, ctrl}
+    return { plug, ugen, ctrl }
 end
 
 local function check_manifest(manifest)
@@ -95,6 +99,10 @@ function Installer.is_installed()
     return state == State.INSTALLED
 end
 
+function Installer.can_install()
+    return wifi.ip ~= ""
+end
+
 function Installer.is_working()
     return state ~= State.NOT_INSTALLED and state ~= State.INSTALLED
 end
@@ -103,17 +111,37 @@ function Installer.install(options)
     state = State.DOWNLOADING
     download_plugin(
         function()
-            if options.on_downloaded then
+            local downloaded, _ = check_manifest(Installer.STAGING_DIR)
+            if not downloaded then
+                if options.on_failed then
+                    options.on_failed('download')
+                end
+                state = State.NOT_INSTALLED
+                return
+            elseif options.on_downloaded then
                 options.on_downloaded()
             end
             state = State.INSTALLING
             install_plugin()
-            if options.on_installed then
+            local installed, _ = check_manifest()
+            if not installed then
+                if options.on_failed then
+                    options.on_failed('install')
+                end
+                state = State.NOT_INSTALLED
+                return
+            elseif options.on_installed then
                 options.on_installed()
             end
             state = State.SHUTTING_DOWN
         end
     )
+end
+
+function Installer.uninstall()
+    print("Uninstalling...")
+    os.execute(get_uninstall_cmd())
+    print("Uninstalled. Please reboot.")
 end
 
 return Installer

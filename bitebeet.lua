@@ -56,9 +56,9 @@ engine.name = nil
 local editor = nil
 
 local COMMANDS = {
-    {'eval', 'si'},
-    {'amp', 'f'},
-    {'reset', ''}
+    { 'eval',  'si' },
+    { 'amp',   'f' },
+    { 'reset', '' }
 }
 
 local function load_engine()
@@ -108,7 +108,7 @@ function cleanup()
 end
 
 function key(n, z)
-    if z == 1 and not Installer.is_installed() then
+    if n ~= 1 and z == 1 and not Installer.is_installed() and Installer.can_install() then
         InstallCtrl.install()
     end
 end
