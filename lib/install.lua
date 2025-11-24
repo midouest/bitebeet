@@ -23,6 +23,27 @@ local function get_asset_filename()
     return Installer.PLUGIN.NAME .. Installer.PLUGIN.ASSET_EXT
 end
 
+local function get_staging_asset_path()
+    local asset = get_asset_filename()
+    return Installer.STAGING_DIR .. asset
+end
+
+local function get_cleanup_staging_asset_cmd()
+    local staging_asset = get_staging_asset_path()
+    return 'rm ' .. staging_asset
+end
+
+
+local function get_cleanup_staging_dir_cmd()
+    local staging_dir = Installer.STAGING_DIR .. '/' .. Installer.PLUGIN.NAME
+    return 'rm -rf ' .. staging_dir
+end
+
+local function cleanup_staging()
+    os.execute(get_cleanup_staging_asset_cmd())
+    os.execute(get_cleanup_staging_dir_cmd())
+end
+
 local function get_url()
     local asset = get_asset_filename()
     return Installer.PLUGIN.BASE_URL .. Installer.PLUGIN.VERSION .. '/' .. asset
@@ -33,15 +54,15 @@ local function get_download_cmd(url)
 end
 
 local function download_plugin(callback)
+    cleanup_staging()
     local url = get_url()
     local cmd = get_download_cmd(url)
     norns.system_cmd(cmd, callback)
 end
 
 local function get_decompress_cmd()
-    local staging = Installer.STAGING_DIR
-    local asset = get_asset_filename()
-    return 'tar -xf ' .. staging .. asset .. ' -C ' .. staging
+    local staging_asset = get_staging_asset_path()
+    return 'tar -xf ' .. staging_asset .. ' -C ' .. Installer.STAGING_DIR
 end
 
 local function get_install_cmd()
@@ -111,7 +132,7 @@ function Installer.install(options)
     state = State.DOWNLOADING
     download_plugin(
         function()
-            local downloaded, _ = check_manifest(Installer.STAGING_DIR)
+            local downloaded = file_exists(get_staging_asset_path())
             if not downloaded then
                 if options.on_failed then
                     options.on_failed('download')
@@ -123,7 +144,7 @@ function Installer.install(options)
             end
             state = State.INSTALLING
             install_plugin()
-            local installed, _ = check_manifest()
+            local installed, _ = check_manifest(get_manifest())
             if not installed then
                 if options.on_failed then
                     options.on_failed('install')
