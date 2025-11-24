@@ -2,7 +2,6 @@ local Installer = include('lib/install')
 
 local InstallCtrl = {}
 
-local needs_reboot = false
 local install_messages = {}
 
 local function handle_downloaded()
@@ -43,8 +42,9 @@ end
 
 function InstallCtrl.redraw()
     if #install_messages > 0 then
-        screen.level(needs_reboot and 1 or 15)
+        local len = #install_messages
         for i, msg in ipairs(install_messages) do
+            screen.level(math.max(1, 15 - 3 * (len - i)))
             screen.move(0, i * 8)
             screen.text(msg)
         end
